@@ -12,8 +12,9 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
-    navigate('/dashboard');
+    const ok = await login(email, password);
+    if (ok) navigate('/dashboard');
+    else alert('Login failed. Please verify your email and password.');
   };
 
   return (
@@ -78,7 +79,7 @@ export const LoginPage: React.FC = () => {
 };
 
 export const RegisterPage: React.FC = () => {
-  const { login, t } = useApp();
+  const { register, t } = useApp();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -86,8 +87,9 @@ export const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
-    navigate('/dashboard');
+    const ok = await register(name, email, password);
+    if (ok) navigate('/dashboard');
+    else alert('Registration failed. Please try a different email.');
   };
 
   return (
