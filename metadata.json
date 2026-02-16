@@ -1,0 +1,7 @@
+{
+  "name": "Copy of SummaBook - Premium Summaries",
+  "description": "An ultra-modern SaaS platform for book summaries with multi-language support, interactive dashboards, and a premium reading experience.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
