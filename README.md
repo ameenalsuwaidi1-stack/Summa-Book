@@ -1,20 +1,70 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# SummaBook (Vite + React + PHP API)
 
-# Run and deploy your AI Studio app
+This project now works as a full-stack app for cPanel deployments:
+- Frontend: Vite/React app (deploy `dist/` to `public_html`).
+- Backend: `api/index.php` REST API for login/register/books.
+- Database: MySQL schema in `schema.sql`.
 
-This contains everything you need to run your app locally.
+## Local development
 
-View your app in AI Studio: https://ai.studio/apps/drive/1VQl6uNjQVov859MPcLH2FFlfOIM_29jU
+### 1) Install dependencies
+```bash
+npm install
+```
 
-## Run Locally
+### 2) Run frontend
+```bash
+npm run dev
+```
 
-**Prerequisites:**  Node.js
+The frontend uses `/api/index.php` by default. To point to another API URL:
 
+```bash
+VITE_API_BASE=https://your-domain.com/api/index.php
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Build for production
+
+```bash
+npm run build
+```
+
+Upload the generated `dist/` files to `public_html/` (or your chosen document root).
+
+## cPanel deployment guide
+
+### 1) Upload frontend files
+- Build locally with `npm run build`.
+- Upload `dist/*` into `public_html/`.
+
+### 2) Upload API
+- Upload the `api/` folder so your API is available at:
+  - `https://your-domain.com/api/index.php`
+
+### 3) Configure database
+- Create a MySQL database + user in cPanel.
+- Import `schema.sql` using phpMyAdmin.
+
+### 4) Set PHP env values (or edit defaults in `api/index.php`)
+- `DB_HOST`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASS`
+
+If your host does not support environment variables in Apache/PHP, set those values directly at the top of `api/index.php`.
+
+### 5) API routes used by frontend
+- `POST /api/index.php/login`
+- `POST /api/index.php/register`
+- `GET /api/index.php/books`
+- `POST /api/index.php/books`
+- `PUT /api/index.php/books/{id}`
+- `DELETE /api/index.php/books/{id}`
+- `POST /api/index.php/progress`
+
+## Default admin user from schema
+
+- Email: `admin@summa.com`
+- Password: `admin123`
+
+> Change the admin password after first login in production.

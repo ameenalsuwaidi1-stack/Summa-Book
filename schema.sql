@@ -30,4 +30,4 @@ CREATE TABLE IF NOT EXISTS books (
 
 -- Initial admin user (password: admin123)
 INSERT INTO users (name, email, password, role) 
-VALUES ('Admin', 'admin@summa.com', '$2y$10$7R6v7u/K/z7m/J/L/A.9i.f5H.k.L.C.k.L.C.k.L.C.k.L.C.k.L.C', 'admin');
+VALUES ('Admin', 'admin@summa.com', '$2y$12$LgseMWSaniBzsIriIDQEC.5SuC6zG.quCZVKyx1s69HYW5iL4nb3G', 'admin');

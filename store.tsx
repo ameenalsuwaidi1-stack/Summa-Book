@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { AppState, Language, Theme, User, Book } from './types';
+import { AppState, Language, Theme, Book } from './types';
 import { translations } from './translations';
 import { db } from './db';
 import { api } from './api';
@@ -12,6 +11,7 @@ interface AppContextType {
   toggleTheme: () => void;
   toggleLanguage: () => void;
   login: (email: string, pass: string) => Promise<boolean>;
+  register: (name: string, email: string, pass: string) => Promise<boolean>;
   logout: () => void;
   updateBook: (book: Book) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
@@ -28,7 +28,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const settings = db.getSettings();
     const user = db.getCurrentUser();
     const books = db.getBooks();
-    
+
     return {
       language: settings.language as Language,
       theme: settings.theme as Theme,
@@ -44,6 +44,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     document.body.className = state.language === 'ar' ? 'rtl bg-slate-50 dark:bg-slate-950' : 'bg-slate-50 dark:bg-slate-950';
   }, [state.language, state.theme]);
 
+  useEffect(() => {
+    db.saveBooks(state.books);
+  }, [state.books]);
+
+  useEffect(() => {
+    db.saveCurrentUser(state.user);
+  }, [state.user]);
+
   const t = useCallback((key: keyof typeof translations['en']) => {
     return translations[state.language][key] || key;
   }, [state.language]);
@@ -58,10 +66,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshBooks = async () => {
     setLoading(true);
-    const books = await api.fetchBooks();
-    setState(prev => ({ ...prev, books }));
-    setLoading(false);
+    try {
+      const books = await api.fetchBooks();
+      if (books.length > 0) {
+        setState(prev => ({ ...prev, books }));
+      }
+    } catch (error) {
+      console.warn('API unavailable, using local books cache.', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    void refreshBooks();
+  }, []);
 
   const handleLogin = async (email: string, pass: string): Promise<boolean> => {
     setLoading(true);
@@ -69,6 +88,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const user = await api.login(email, pass);
       setState(prev => ({ ...prev, user }));
       return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (name: string, email: string, pass: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      await api.register(name, email, pass);
+      return handleLogin(email, pass);
+    } catch (error) {
+      console.error(error);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -83,26 +118,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleUpdateBook = async (updatedBook: Book) => {
     setLoading(true);
-    await api.updateBook(updatedBook);
-    await refreshBooks();
+    try {
+      await api.updateBook(updatedBook);
+      await refreshBooks();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteBook = async (id: string) => {
     setLoading(true);
-    await api.deleteBook(id);
-    await refreshBooks();
+    try {
+      await api.deleteBook(id);
+      await refreshBooks();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddBook = async (newBook: Omit<Book, 'id'>) => {
     setLoading(true);
-    await api.addBook(newBook);
-    await refreshBooks();
+    try {
+      await api.addBook(newBook);
+      await refreshBooks();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProgress = (bookId: string, progress: number) => {
     if (!state.user) return;
-    api.trackProgress(state.user.id, bookId, progress);
-    // Silent state update for UI responsiveness
+    void api.trackProgress(state.user.id, bookId, progress);
     setState(prev => {
       if (!prev.user) return prev;
       return {
@@ -116,11 +162,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   return (
-    <AppContext.Provider value={{ 
-      state, loading, t, toggleTheme, toggleLanguage, 
-      login: handleLogin, logout: handleLogout, 
-      updateBook: handleUpdateBook, deleteBook: handleDeleteBook, 
-      addBook: handleAddBook, updateProgress, refreshBooks 
+    <AppContext.Provider value={{
+      state, loading, t, toggleTheme, toggleLanguage,
+      login: handleLogin, register: handleRegister, logout: handleLogout,
+      updateBook: handleUpdateBook, deleteBook: handleDeleteBook,
+      addBook: handleAddBook, updateProgress, refreshBooks
     }}>
       {children}
     </AppContext.Provider>
